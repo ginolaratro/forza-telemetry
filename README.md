@@ -1,6 +1,6 @@
 # forza-telemetry
 
-Local Forza Data Out → SQLite → MCP coaching system. Work in progress: capture, parser and storage done; analysis, dashboard and MCP server next.
+Local Forza Data Out → SQLite → MCP coaching system. Work in progress: capture, parser, storage, analysis and MCP server done; live dashboard next.
 
 ## Capture raw packets
 
@@ -35,3 +35,17 @@ pnpm replay file.bin --db :memory:                    # dry run, prints the laps
 pnpm replay file.bin --udp 127.0.0.1:5344 --speed 4   # send over UDP to a running `pnpm listen`
 pnpm inspect file.bin                                 # field ranges + lap transitions
 ```
+
+## Ask Claude about your driving (MCP server)
+
+```sh
+claude mcp add forza-telemetry -- pnpm --dir "$(pwd)" -s mcp   # register with Claude Code (stdio)
+pnpm mcp                                                     # or run it directly
+```
+
+Opens `data/forza.db` read-only, so it can run alongside `pnpm listen`. Tools: `get_status`, `list_sessions`,
+`list_laps`, `get_track_corners`, `lap_summary`, `compare_laps`, `where_am_i_losing_time`, `consistency_report`,
+`get_lap_trace`. Session arguments default to the most recent session; `compare_laps` defaults its baseline to the
+fastest clean lap on that track. Then just ask: "where am I losing time?", "why was lap 3 slow?", "what am I doing
+differently in T1 on my best lap?"
+
