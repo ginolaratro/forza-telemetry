@@ -7,7 +7,8 @@ Local Forza Data Out → SQLite → MCP coaching system. Work in progress (step 
 ```sh
 pnpm install
 ipconfig getifaddr en0      # Mac's LAN IP, enter this in-game
-pnpm capture                # writes data/raw/capture-<timestamp>.bin; Ctrl+C to stop
+pnpm capture                # saves only while driving to data/raw/capture-<timestamp>.bin; Ctrl+C to stop
+pnpm capture --all          # also keep menu/pause packets
 ```
 
 In-game: Settings → HUD and Gameplay → Data Out = On, Data Out IP Address = the Mac's LAN IP,
