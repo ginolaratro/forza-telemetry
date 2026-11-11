@@ -10,7 +10,9 @@
     "capture": "tsx scripts/capture.ts",
     "listen": "tsx src/listener/main.ts",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "replay": "tsx scripts/replay.ts",
+    "inspect": "tsx scripts/inspect.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.32.2",
