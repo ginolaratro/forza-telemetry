@@ -38,6 +38,13 @@ URL — open it on a tablet or phone on the same Wi-Fi and put it next to the sc
   instruction ("Brake 15 m later", "Carry 10 km/h more to the apex", "Ran wide — brake earlier").
 - **Next corner**: countdown to the reference brake point, the reference's apex speed and gear, and what went wrong
   there last lap. Corners where you lost ≥ 0.1 s last lap get a cue *before* the braking zone.
+- **Brake markers**: three short beeps then a long one *at* the reference brake point (beep · beep · beep · BEEEP —
+  press on the last tone; don't react to it), plus a full-screen BRAKE / LIFT flash. The time to the marker accounts for
+  speed and acceleration, and frames go out at ~60 Hz in the last 2 s, so the final beep lands within a few
+  milliseconds of the marker. Right after you brake you see how far off you were ("T2 · braked 29 m late", a chime
+  when you're within 5 m), each corner chip keeps it, and the lap report sums it up. If you're consistently late,
+  set *Timing* to play the beeps earlier.
+- **Lockups**: a wheel locking under braking flashes EASE OFF with a low buzz while it's happening.
 - **Lap report**: time vs reference, the three biggest losses with fixes, one focus for the next lap, and the
   session's theoretical best.
 - **Voice**: tap *Voice on* and the callouts, cues and lap reports are spoken (browser speech, no setup).

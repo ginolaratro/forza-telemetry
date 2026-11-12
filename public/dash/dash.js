@@ -339,7 +339,7 @@ function renderCorners() {
     if (pv.textContent !== ptxt) pv.textContent = ptxt;
     const mk = S.lap?.marks[id] ?? null;
     const bk = li.children[3];
-    const btxt = mk ? (mk.verdict === "on" ? "brake ✓" : `brake ${mk.offset_m > 0 ? "+" : "−"}${Math.abs(mk.offset_m)} m`) : "";
+    const btxt = mk ? (mk.verdict === "on" ? "brk ✓" : `brk ${mk.offset_m > 0 ? "+" : "−"}${Math.abs(mk.offset_m)}m`) : "";
     if (bk.textContent !== btxt) bk.textContent = btxt;
     bk.dataset.v = mk?.verdict ?? "";
     li.title = r ? `${r.tip}\n${r.note}` : "";
@@ -445,7 +445,7 @@ function renderNext(now) {
     $("nextHit").dataset.v = hit.verdict;
     text("nextHit", hit.verdict === "on" ? `${hit.id} · on the marker` : `${hit.id} · braked ${Math.abs(hit.offset_m)} m ${hit.verdict}`);
   }
-  text("nextRef", `Reference: ${brakeIn == null ? "lift" : "brake"}, ${Math.round(n.ref_min_kmh)} km/h at the apex in gear ${n.ref_gear}`);
+  text("nextRef", `Reference: ${word}, ${Math.round(n.ref_min_kmh)} km/h at the apex in gear ${n.ref_gear}`);
   const cue = S.cue && S.cue.id === n.id && now - S.cue.at < CUE_HOLD_MS ? S.cue : null;
   card.dataset.cue = cue ? "on" : "off";
   text("nextLast", cue ? cue.tip : n.last ? `Last lap ${fmtDelta(n.last.time_delta_s)} s — ${n.last.tip}` : "");
