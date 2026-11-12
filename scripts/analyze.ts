@@ -18,6 +18,6 @@ const { refLapId, corners } = cornersFor(db, getLapInfo(db, laps[0]!.id)!);
 console.log(`session ${sid}, reference lap #${refLapId}, ${corners.length} corners:`);
 for (const c of corners) console.log(`  ${c.id}: zone ${c.zoneStart}–${c.zoneEnd} m, apex ${c.apex} m, segment ${c.segStart}→${c.segEnd} m`);
 for (const l of laps) out(`lap #${l.id}`, lapSummary(db, l.id));
-for (const l of laps.slice(1)) out(`compare #${laps[0]!.id} → #${l.id}`, compareLaps(db, refLapId, l.id));
+for (const l of laps.filter((l) => l.id !== refLapId)) out(`compare reference #${refLapId} → #${l.id}`, compareLaps(db, refLapId, l.id));
 out("where am I losing time", whereAmILosingTime(db, sid));
 out("consistency", consistencyReport(db, sid));

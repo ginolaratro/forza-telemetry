@@ -2,12 +2,15 @@
  * Live listener: UDP → parser → pipeline → SQLite.
  * Prints packets/sec, detected format and current lap once a second, and writes
  * a heartbeat row (listener_status) that the MCP server reads.
+ * Also serves the live coaching dashboard (disable with --no-dash).
  */
 import dgram from "node:dgram";
-import { DB_PATH, HOST, PORT } from "../config.js";
+import { DASH_PORT, DB_PATH, HOST, PORT } from "../config.js";
 import { LAYOUTS } from "./layouts.js";
 import { createIngest } from "./ingest.js";
 import { openDb } from "../store/db.js";
+import { LiveCoach } from "../live/coach.js";
+import { dashUrls, startDashServer } from "../live/server.js";
 
 const db = openDb(DB_PATH);
 const ingest = createIngest(db);
@@ -17,7 +20,27 @@ if (dangling) console.log(`closed ${dangling} session(s) left open by a previous
 const fmtLap = (s: number | null | undefined) =>
   s == null ? "—" : `${Math.floor(s / 60)}:${(s % 60).toFixed(3).padStart(6, "0")}`;
 
+const coach = new LiveCoach(db);
+// The coach must never take the recorder down: log the first error, keep storing telemetry.
+let coachFailed = false;
+ingest.pipeline.onSample = (row, t) => {
+  try {
+    coach.sample(row, t);
+  } catch (err) {
+    if (!coachFailed) console.error("coach error (telemetry is still being recorded):", err);
+    coachFailed = true;
+  }
+};
+const dash = process.argv.includes("--no-dash") ? null : startDashServer(coach, DASH_PORT);
+dash?.on("listening", () => console.log(`Dashboard: ${dashUrls(DASH_PORT).join("  ")}`));
+dash?.on("error", (err) => console.error(`dashboard server error: ${err.message} (set FORZA_DASH_PORT or use --no-dash)`));
+
 ingest.pipeline.onEvent = (e) => {
+  try {
+    coach.event(e);
+  } catch (err) {
+    console.error("coach error:", err);
+  }
   const ts = new Date().toLocaleTimeString();
   if (e.type === "session_start") console.log(`[${ts}] session #${e.sessionId} started`);
   else if (e.type === "session_end") console.log(`[${ts}] session #${e.sessionId} ended${e.deleted ? " (too short, discarded)" : ""}`);
@@ -79,6 +102,8 @@ const timer = setInterval(() => {
 
 function stop() {
   clearInterval(timer);
+  dash?.close();
+  dash?.closeAllConnections();
   sock.close();
   ingest.close();
   ingest.store.writeStatus({

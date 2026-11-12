@@ -7,3 +7,4 @@ export const RAW_DIR = path.join(DATA_DIR, "raw");
 export const DB_PATH = process.env.FORZA_DB ?? path.join(DATA_DIR, "forza.db");
 export const PORT = Number(process.env.FORZA_PORT ?? 5344);
 export const HOST = process.env.FORZA_HOST ?? "0.0.0.0";
+export const DASH_PORT = Number(process.env.FORZA_DASH_PORT ?? 5345);

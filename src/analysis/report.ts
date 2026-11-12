@@ -136,7 +136,7 @@ export interface CornerDiff {
   note: string;
 }
 
-function diffCorner(a: Measured, b: Measured): CornerDiff {
+export function diffCorner(a: Measured, b: Measured): CornerDiff {
   const dt = b.segmentTime - a.segmentTime;
   const db_ = a.brakePoint !== null && b.brakePoint !== null ? b.brakePoint - a.brakePoint : null;
   const dtp = a.throttlePickup !== null && b.throttlePickup !== null ? b.throttlePickup - a.throttlePickup : null;
@@ -185,7 +185,7 @@ export function maxLineOffset(g: Grid, ref: Grid, lo: number, hi: number): numbe
   return worst;
 }
 
-type Measured = CornerMetrics & { offLineM: number };
+export type Measured = CornerMetrics & { offLineM: number };
 
 function measured(db: DB, lap: LapInfo, corners: CornerDef[], refLapId: number): { grid: Grid; metrics: Measured[] } {
   const grid = loadGrid(db, lap.id);

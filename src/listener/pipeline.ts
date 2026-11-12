@@ -20,7 +20,7 @@
  * flagged had_rewind.
  */
 import type { Telemetry } from "./parser.js";
-import type { TelemetryStore } from "../store/store.js";
+import type { SampleRow, TelemetryStore } from "../store/store.js";
 
 export const SESSION_GAP_MS = 30_000;
 export const RESTART_JUMP_S = 30;
@@ -62,6 +62,8 @@ export class Pipeline {
   private session: SessionState | null = null;
   private lastFlushMs = 0;
   onEvent: (e: PipelineEvent) => void = () => {};
+  /** Called for every stored sample, after segmentation (live dashboard / coach). */
+  onSample: (row: SampleRow, t: Telemetry) => void = () => {};
 
   constructor(private store: TelemetryStore) {}
 
@@ -108,7 +110,7 @@ export class Pipeline {
 
     const lap = s.lap!;
     const sl = t.slipRatio;
-    this.store.queueSample({
+    const row: SampleRow = {
       lap_id: lap.id,
       t_ms: Math.round((t.currentRaceTime - lap.startRaceTime) * 1000),
       dist_m: t.distanceTraveled - lap.startDist,
@@ -126,7 +128,8 @@ export class Pipeline {
       slip_fr: sl[1],
       slip_rl: sl[2],
       slip_rr: sl[3],
-    });
+    };
+    this.store.queueSample(row);
     s.last = t;
     s.lastRecvMs = recvMs;
 
@@ -134,6 +137,7 @@ export class Pipeline {
       this.store.flush();
       this.lastFlushMs = recvMs;
     }
+    this.onSample(row, t);
   }
 
   /** End the current session (listener shutdown / end of replay). */

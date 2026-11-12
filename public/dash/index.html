@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0d0d0d" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <title>Forza Live Coach</title>
+  <link rel="stylesheet" href="dash.css" />
+</head>
+<body>
+  <header class="head">
+    <div class="brand"><span id="conn" class="pill" data-state="off">offline</span></div>
+    <dl class="laps">
+      <div><dt>Lap</dt><dd id="lapNo">—</dd></div>
+      <div><dt>Time</dt><dd id="lapTime" class="mono">—</dd></div>
+      <div><dt>Reference</dt><dd id="refLap" class="mono">—</dd></div>
+      <div><dt>Last</dt><dd id="lastLap" class="mono">—</dd></div>
+      <div><dt>Best</dt><dd id="bestLap" class="mono">—</dd></div>
+      <div id="posWrap" hidden><dt>Pos</dt><dd id="pos">—</dd></div>
+    </dl>
+    <div class="actions">
+      <button id="beepBtn" type="button" aria-pressed="true" title="Countdown beeps to the reference brake point">Beeps on</button>
+      <label class="lead" title="Play the beeps earlier if you keep braking late, later if you keep braking early">Timing
+        <select id="leadSel">
+          <option value="0">on time</option>
+          <option value="50">50 ms early</option>
+          <option value="100">100 ms early</option>
+          <option value="150">150 ms early</option>
+          <option value="200">200 ms early</option>
+        </select>
+      </label>
+      <button id="voiceBtn" type="button" aria-pressed="false" title="Spoken coaching">Voice off</button>
+      <button id="fsBtn" type="button" title="Full screen, keep screen on">Full screen</button>
+    </div>
+  </header>
+
+  <main class="grid">
+    <section id="deltaPanel" class="panel delta" data-sign="none" aria-live="off">
+      <h2>Delta to reference</h2>
+      <div id="delta" class="big mono">—</div>
+      <div class="sub">
+        <span>Predicted <b id="pred" class="mono">—</b></span>
+        <span id="trend" class="trend"></span>
+      </div>
+    </section>
+
+    <section class="panel coach">
+      <div id="coachCard" class="coach-card" data-sev="none">
+        <h2 id="coachHead">Coach</h2>
+        <div id="coachMain" class="coach-main">Drive a lap to set a reference.</div>
+        <div id="coachSub" class="coach-sub"></div>
+      </div>
+      <div id="nextCard" class="next-card" hidden>
+        <div class="next-top">
+          <span class="next-label">Next</span>
+          <span id="nextId" class="next-id">T1</span>
+          <span id="nextIn" class="next-in mono">—</span>
+        </div>
+        <div class="brakebar" aria-hidden="true"><div id="brakeFill"></div></div>
+        <div id="nextHit" class="next-hit" hidden></div>
+        <div id="nextRef" class="next-ref"></div>
+        <div id="nextLast" class="next-last"></div>
+      </div>
+    </section>
+
+    <section class="panel map">
+      <h2 id="mapHead">Track</h2>
+      <canvas id="mapCv" aria-label="Track map with car position and corner results"></canvas>
+    </section>
+
+    <section class="panel tele">
+      <div class="speed"><span id="speed" class="big mono">—</span><span class="unit">km/h</span></div>
+      <div class="gear"><span class="unit">Gear</span><span id="gear" class="big mono">—</span></div>
+      <div class="rpm" aria-hidden="true"><div id="rpmFill"></div></div>
+      <div class="pedals">
+        <div class="pedal"><div class="bar"><div id="thrFill" class="fill thr"></div></div><span>THR</span></div>
+        <div class="pedal"><div class="bar"><div id="brkFill" class="fill brk"></div></div><span>BRK</span></div>
+      </div>
+      <div class="steer" aria-hidden="true"><div id="steerDot"></div></div>
+    </section>
+
+    <section class="panel chart">
+      <div class="chart-head">
+        <h2>Delta this lap</h2>
+        <div class="legend">
+          <span><i class="sw cur"></i>This lap</span>
+          <span><i class="sw prev"></i>Previous lap</span>
+          <span class="muted">above 0 = slower</span>
+        </div>
+      </div>
+      <div class="chart-wrap">
+        <canvas id="chartCv" aria-label="Time delta to the reference lap by distance"></canvas>
+        <div id="tip" class="tip" hidden></div>
+      </div>
+    </section>
+
+    <section class="panel strip">
+      <h2>Corners — this lap vs reference</h2>
+      <ol id="corners" class="corners"></ol>
+    </section>
+
+    <section class="panel log">
+      <h2>Lap reports</h2>
+      <ol id="log" class="log-list"><li class="muted">Lap summaries appear here after each lap.</li></ol>
+    </section>
+  </main>
+
+  <div id="flash" class="flash" data-kind="brake" hidden aria-hidden="true"><span id="flashText">BRAKE</span></div>
+
+  <div id="waiting" class="waiting">
+    <div>
+      <h1>Waiting for telemetry</h1>
+      <p>Start driving. In Forza: Settings → HUD and Gameplay → Data Out <b>On</b>, IP = this computer, port <b>5344</b>, format <b>Dash</b>.</p>
+      <p class="muted" id="waitDetail">Not connected to the listener.</p>
+    </div>
+  </div>
+
+  <script type="module" src="dash.js"></script>
+</body>
+</html>
