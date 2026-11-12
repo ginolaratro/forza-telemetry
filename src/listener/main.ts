@@ -31,7 +31,7 @@ ingest.pipeline.onSample = (row, t) => {
     coachFailed = true;
   }
 };
-const dash = process.argv.includes("--no-dash") ? null : startDashServer(coach, DASH_PORT);
+const dash = process.argv.includes("--no-dash") ? null : startDashServer(coach, DASH_PORT, undefined, db);
 dash?.on("listening", () => console.log(`Dashboard: ${dashUrls(DASH_PORT).join("  ")}`));
 dash?.on("error", (err) => console.error(`dashboard server error: ${err.message} (set FORZA_DASH_PORT or use --no-dash)`));
 

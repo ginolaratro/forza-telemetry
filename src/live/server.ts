@@ -3,6 +3,10 @@
  * GET /          dashboard
  * GET /events    SSE: one `init` snapshot, then every CoachMessage as JSON
  * GET /api/state current snapshot (debugging)
+ * GET /progress.html                progress over time (static page)
+ * GET /api/progress/combos          personal bests per track + car + tune (the page's combo picker)
+ * GET /api/progress?track&car&pi&all_tunes=1&last   progress report
+ * GET /api/progress/corner?corner=T3&track&car&pi&all_tunes=1&last   one corner over time
  */
 import fs from "node:fs";
 import http from "node:http";
@@ -10,6 +14,8 @@ import os from "node:os";
 import path from "node:path";
 import { ROOT } from "../config.js";
 import type { LiveCoach } from "./coach.js";
+import type { DB } from "../store/db.js";
+import { cornerProgress, personalBests, progressReport, type ProgressOptions } from "../analysis/progress.js";
 
 const STATIC_DIR = path.join(ROOT, "public", "dash");
 const TYPES: Record<string, string> = {
@@ -19,10 +25,11 @@ const TYPES: Record<string, string> = {
   ".svg": "image/svg+xml",
 };
 
-export function startDashServer(coach: LiveCoach, port: number, host = "0.0.0.0"): http.Server {
+export function startDashServer(coach: LiveCoach, port: number, host = "0.0.0.0", db?: DB): http.Server {
   const server = http.createServer((req, res) => {
     const url = new URL(req.url ?? "/", "http://x");
     if (url.pathname === "/events") return stream(coach, req, res);
+    if (url.pathname.startsWith("/api/progress")) return progressApi(db, url, res);
     if (url.pathname === "/api/state") {
       res.writeHead(200, { "content-type": "application/json" });
       return res.end(JSON.stringify(coach.snapshot()));
@@ -38,6 +45,48 @@ export function startDashServer(coach: LiveCoach, port: number, host = "0.0.0.0"
   });
   server.listen(port, host);
   return server;
+}
+
+function sendJson(res: http.ServerResponse, status: number, v: unknown) {
+  res.writeHead(status, { "content-type": "application/json", "cache-control": "no-cache" });
+  res.end(JSON.stringify(v));
+}
+
+/** Query string → progress options (anything missing defaults to the latest session's combo). */
+export function progressOptions(q: URLSearchParams): ProgressOptions {
+  const int = (k: string) => {
+    const v = q.get(k);
+    if (v === null || v === "") return undefined;
+    if (!/^\d+$/.test(v)) throw new Error(`${k} must be a whole number`);
+    return Number(v);
+  };
+  const last = int("last");
+  return {
+    track_ordinal: int("track"),
+    car_ordinal: int("car"),
+    car_pi: int("pi"),
+    all_tunes: q.get("all_tunes") === "1",
+    last_sessions: last === undefined ? undefined : Math.min(100, Math.max(1, last)),
+  };
+}
+
+// Analysis runs synchronously on the listener's thread; a report over a few dozen laps takes well under a second
+// and per-lap metrics are cached, so UDP packets only queue briefly in the socket buffer.
+function progressApi(db: DB | undefined, url: URL, res: http.ServerResponse) {
+  if (!db) return sendJson(res, 503, { error: "progress needs the database (start the dashboard from `pnpm listen`)" });
+  try {
+    if (url.pathname === "/api/progress/combos") return sendJson(res, 200, personalBests(db));
+    const opts = progressOptions(url.searchParams);
+    if (url.pathname === "/api/progress/corner") {
+      const corner = url.searchParams.get("corner");
+      if (!corner) return sendJson(res, 400, { error: "corner is required, e.g. ?corner=T3" });
+      return sendJson(res, 200, cornerProgress(db, corner, opts));
+    }
+    if (url.pathname === "/api/progress") return sendJson(res, 200, progressReport(db, opts));
+    return sendJson(res, 404, { error: "not found" });
+  } catch (e) {
+    return sendJson(res, 400, { error: e instanceof Error ? e.message : String(e) });
+  }
 }
 
 function stream(coach: LiveCoach, req: http.IncomingMessage, res: http.ServerResponse) {

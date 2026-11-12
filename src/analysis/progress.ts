@@ -307,6 +307,8 @@ export function progressReport(db: DB, o: ProgressOptions = {}) {
     return {
       id: c.id,
       status,
+      // typical segment time per session, aligned with `sessions` (null = no clean laps that session)
+      medians: stats.map((s) => s.corners[k]?.median_s ?? null),
       first_median_s: f.median_s,
       latest_median_s: l.median_s,
       change_s: change,

@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0d0d0d" />
+  <title>Forza Progress</title>
+  <link rel="stylesheet" href="dash.css" />
+  <link rel="stylesheet" href="progress.css" />
+</head>
+<body class="viz-root">
+  <header class="phead">
+    <nav class="tabs" aria-label="Pages">
+      <a href="/">Live</a>
+      <a href="/progress.html" aria-current="page">Progress</a>
+    </nav>
+    <div class="filters" role="group" aria-label="Filters">
+      <label>Track / car
+        <select id="comboSel" aria-label="Track, car and tune"><option>Loading…</option></select>
+      </label>
+      <label>Sessions
+        <select id="lastSel">
+          <option value="5">last 5</option>
+          <option value="10" selected>last 10</option>
+          <option value="25">last 25</option>
+          <option value="100">all</option>
+        </select>
+      </label>
+      <button id="tunesBtn" type="button" aria-pressed="false" title="Include sessions on other PIs (tunes) of this car">All tunes</button>
+    </div>
+  </header>
+
+  <p id="err" class="err" hidden></p>
+
+  <main id="pmain" class="pgrid" hidden>
+    <section class="panel tiles" aria-label="Headline numbers">
+      <div class="tile hero">
+        <span class="tlabel">Personal best</span>
+        <span id="pbVal" class="tvalue">—</span>
+        <span id="pbSub" class="tsub"></span>
+      </div>
+      <div class="tile">
+        <span class="tlabel">Pace</span>
+        <span id="paceVal" class="tvalue">—</span>
+        <span id="paceSub" class="tsub"></span>
+      </div>
+      <div class="tile">
+        <span class="tlabel">Consistency</span>
+        <span id="consVal" class="tvalue">—</span>
+        <span id="consSub" class="tsub"></span>
+      </div>
+      <div class="tile">
+        <span class="tlabel">Theoretical best, latest session</span>
+        <span id="theoVal" class="tvalue">—</span>
+        <span id="theoSub" class="tsub"></span>
+      </div>
+    </section>
+
+    <section class="panel read">
+      <h2>Coach's read</h2>
+      <ul id="readList" class="read-list"></ul>
+    </section>
+
+    <section class="panel pchart laps-chart">
+      <div class="chart-head">
+        <h2>Lap time by session</h2>
+        <div class="legend" id="lapLegend">
+          <span><i class="sw s1"></i>Best</span>
+          <span><i class="sw s2"></i>Median</span>
+          <span><i class="sw s3"></i>Theoretical best</span>
+          <span class="muted">lower = faster</span>
+        </div>
+      </div>
+      <div class="chart-wrap tall">
+        <canvas id="lapCv" role="img" aria-label="Best, median and theoretical best lap time per session; the sessions table below has the values"></canvas>
+      </div>
+    </section>
+
+    <section class="panel pchart sd-chart">
+      <div class="chart-head">
+        <h2>Lap-time spread by session</h2>
+        <span class="muted small">standard deviation, lower = more consistent</span>
+      </div>
+      <div class="chart-wrap">
+        <canvas id="sdCv" role="img" aria-label="Lap-time standard deviation per session"></canvas>
+      </div>
+    </section>
+
+    <section class="panel pchart change-chart">
+      <div class="chart-head">
+        <h2 id="changeHead">Corner time change, first → latest session</h2>
+        <div class="legend">
+          <span><i class="sw gain"></i>Faster</span>
+          <span><i class="sw loss"></i>Slower</span>
+        </div>
+      </div>
+      <div class="chart-wrap" id="changeWrap">
+        <canvas id="changeCv" role="img" aria-label="Change in typical corner time per corner; the corners table has the values"></canvas>
+      </div>
+    </section>
+
+    <section class="panel ctable-panel">
+      <h2>Corners <span class="muted small">— tap a corner for its history</span></h2>
+      <div class="tscroll">
+        <table class="ptable" id="cornerTable">
+          <thead>
+            <tr>
+              <th scope="col">Corner</th>
+              <th scope="col">Status</th>
+              <th scope="col" class="num">First</th>
+              <th scope="col" class="num">Latest</th>
+              <th scope="col" class="num">Change</th>
+              <th scope="col" class="num" title="Fastest clean segment you've done in this corner">Best ever</th>
+              <th scope="col" class="num" title="Latest typical lap vs your best-ever segment">Left on table</th>
+              <th scope="col">Trend</th>
+              <th scope="col">What changed (first → latest)</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="panel detail" id="detail" hidden>
+      <div class="chart-head">
+        <h2 id="detailHead">Corner</h2>
+        <button id="detailClose" type="button" class="small-btn">Close</button>
+      </div>
+      <p id="detailSum" class="detail-sum"></p>
+      <div class="chart-head">
+        <span class="small muted">Segment time per session</span>
+        <div class="legend">
+          <span><i class="sw s1"></i>Best</span>
+          <span><i class="sw s2"></i>Typical (median)</span>
+        </div>
+      </div>
+      <div class="chart-wrap">
+        <canvas id="detailCv" role="img" aria-label="Best and typical segment time per session for this corner; the table below has the values"></canvas>
+      </div>
+      <div class="tscroll">
+        <table class="ptable" id="detailTable">
+          <thead>
+            <tr>
+              <th scope="col">Session</th><th scope="col">Date</th><th scope="col" class="num">Laps</th>
+              <th scope="col" class="num">Typical</th><th scope="col" class="num">Best</th>
+              <th scope="col" class="num">Brake at</th><th scope="col" class="num">Entry</th><th scope="col" class="num">Min</th>
+              <th scope="col" class="num">Throttle at</th><th scope="col" class="num">Exit</th>
+              <th scope="col" class="num">Lockup</th><th scope="col" class="num">Wheelspin</th><th scope="col" class="num">Off line</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="panel stable-panel">
+      <h2>Sessions</h2>
+      <div class="tscroll">
+        <table class="ptable" id="sessionTable">
+          <thead>
+            <tr>
+              <th scope="col">Session</th><th scope="col">Date</th><th scope="col" class="num">PI</th>
+              <th scope="col" class="num">Clean laps</th><th scope="col" class="num">Best</th>
+              <th scope="col" class="num">Median</th><th scope="col" class="num">Spread</th><th scope="col" class="num">Theoretical</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="panel pb-panel">
+      <h2>Personal-best history</h2>
+      <ol id="pbList" class="pb-list"></ol>
+    </section>
+  </main>
+
+  <div id="tip" class="tip" hidden></div>
+  <script type="module" src="progress.js"></script>
+</body>
+</html>

@@ -72,6 +72,12 @@ pnpm progress --pbs                # personal bests for every track + car
 pnpm progress --all-tunes --last 5 --json
 ```
 
+The same reports are on the dashboard: open `/progress.html` (the **Progress** link on the live page). It shows your PB,
+pace and consistency verdicts, lap time by session (best, median, theoretical best), lap-time spread, how much each
+corner gained or lost from your first to your latest session, a corner table with trend sparklines, and the
+personal-best history. Tap a corner for its session-by-session detail (brake point, speeds, lockups, off-line laps).
+Pick the track/car and session window at the top; the URL keeps the selection, so it can be bookmarked.
+
 Progress is tracked per track + car + tune, where the tune is the car's PI: a PI change means the car was
 upgraded or retuned, so by default only sessions on the latest PI count (`--all-tunes` mixes them). Every lap
 is measured against one corner layout, so T3 is the same corner in every session. For each session you get the

@@ -111,7 +111,7 @@ describe("live coach on the real race", () => {
 });
 
 describe("dashboard server", () => {
-  const server = startDashServer(coach, 0, "127.0.0.1");
+  const server = startDashServer(coach, 0, "127.0.0.1", db);
   afterAll(() => {
     server.closeAllConnections();
     server.close();
@@ -143,5 +143,24 @@ describe("dashboard server", () => {
     expect(JSON.parse(ev.body.replace(/^data: /, "")).type).toBe("init");
     expect((await get("/..%2Fpackage.json")).status).toBe(404);
     expect((await get("/../package.json")).status).toBe(404);
+  });
+
+  it("serves the progress page and its API", async () => {
+    await new Promise((r) => (server.listening ? r(null) : server.once("listening", r)));
+    const page = await get("/progress.html");
+    expect(page.status).toBe(200);
+    expect(page.body).toContain("progress.js");
+    const combos = JSON.parse((await get("/api/progress/combos")).body);
+    expect(combos.combos[0]).toMatchObject({ track_ordinal: 1620, car_ordinal: 2529, best_lap: "1:53.010" });
+    const rep = await get("/api/progress?track=1620&last=5");
+    expect(rep.type).toMatch(/json/);
+    const r = JSON.parse(rep.body);
+    expect(r.personal_best.lap_time_s).toBe(113.01);
+    expect(r.corners[0].medians).toHaveLength(r.sessions.length);
+    expect(JSON.parse((await get("/api/progress/corner?corner=T2")).body).corner.id).toBe("T2");
+    const bad = await get("/api/progress?track=x");
+    expect(bad.status).toBe(400);
+    expect(JSON.parse(bad.body).error).toMatch(/track must be a whole number/);
+    expect((await get("/api/progress/corner")).status).toBe(400);
   });
 });
