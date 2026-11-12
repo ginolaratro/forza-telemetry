@@ -16,6 +16,7 @@ import {
   referenceLapId,
   whereAmILosingTime,
 } from "../analysis/report.js";
+import { cornerProgress, personalBests, progressReport } from "../analysis/progress.js";
 
 /** Listener heartbeat older than this means nothing is streaming. */
 export const LIVE_STALE_MS = 5_000;
@@ -26,6 +27,7 @@ const INSTRUCTIONS = `Forza Motorsport telemetry coach. Data comes from the game
 - Corners are named T1, T2, … numbered on the reference lap (fastest clean lap on that track); positions are meters from the start line.
 - Sign conventions in comparisons: lap A is the baseline; positive time_delta_s = B slower, positive brake_delta_m = B brakes later, positive throttle_delta_m = B gets on throttle later.
 - Laps flagged is_suspect (>130% of session median), is_outlap or had_rewind are excluded from best/median/consistency unless asked.
+- For "am I improving?" / "how have I progressed?" use progress_report (track + car, defaults to the last one driven); corner_progress for one corner over time; personal_bests for PBs across every track and car. A "tune" is the car's PI: sessions on other PIs are left out unless all_tunes is set.
 - Start with where_am_i_losing_time for "how do I go faster", consistency_report for "where am I inconsistent", compare_laps for two specific laps, and get_lap_trace only when you need the raw inputs through a specific corner.
 - Car and track are game ordinals (numbers), not names.`;
 
@@ -227,6 +229,38 @@ export function createServer(db: DB | Opener): McpServer {
       }
       return trace;
     },
+  );
+
+  const comboArgs = {
+    track_ordinal: z.number().int().optional().describe("Track; defaults to the track of the most recent session"),
+    car_ordinal: z.number().int().optional().describe("Car; defaults to the car of the most recent session on that track"),
+    car_pi: z.number().int().optional().describe("Only sessions with this PI (tune); defaults to the most recent PI"),
+    all_tunes: z.boolean().default(false).describe("Include sessions on every PI of this car"),
+    last_sessions: z.number().int().min(1).max(100).default(10).describe("Only the most recent N sessions"),
+  };
+
+  tool(
+    "progress_report",
+    "Am I improving? Session-by-session best/median/theoretical lap and consistency for one track + car, the pace trend, personal-best history, and which corners improved, got slower or have the most time left vs your best-ever segment.",
+    comboArgs,
+    (db, args) => progressReport(db, args),
+  );
+
+  tool(
+    "corner_progress",
+    "One corner over time: per session, the typical (median) segment time, brake point, entry/min/exit speed, throttle pickup and lockup/wheelspin/off-line rates.",
+    { corner: z.string().describe('Corner id, e.g. "T3" (see get_track_corners)'), ...comboArgs },
+    (db, { corner, ...args }) => cornerProgress(db, corner, args),
+  );
+
+  tool(
+    "personal_bests",
+    "Personal best lap for every track + car + tune driven, with dates and the improvement since the first session.",
+    {
+      track_ordinal: z.number().int().optional(),
+      car_ordinal: z.number().int().optional(),
+    },
+    (db, args) => personalBests(db, args),
   );
 
   return server;

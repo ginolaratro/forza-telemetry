@@ -187,7 +187,7 @@ export function maxLineOffset(g: Grid, ref: Grid, lo: number, hi: number): numbe
 
 export type Measured = CornerMetrics & { offLineM: number };
 
-function measured(db: DB, lap: LapInfo, corners: CornerDef[], refLapId: number): { grid: Grid; metrics: Measured[] } {
+export function measured(db: DB, lap: LapInfo, corners: CornerDef[], refLapId: number): { grid: Grid; metrics: Measured[] } {
   const grid = loadGrid(db, lap.id);
   const ref = refLapId === lap.id ? grid : loadGrid(db, refLapId);
   const metrics = measureLap(grid, corners, lap.drivetrain, lap.lap_time_s ?? undefined).map((m, k) => {
@@ -235,6 +235,24 @@ export function compareLaps(db: DB, lapA: number, lapB: number) {
 
 // ---------------------------------------------------------------- session
 
+/**
+ * For each corner, the index of the lap with the fastest clean segment: skips off-line corners and
+ * corners whose "gain" was paid back by going off in the next one. Falls back to `fallback`.
+ */
+export function bestSegmentLaps(perLap: Measured[][], fallback: number): number[] {
+  const nCorners = perLap[0]?.length ?? 0;
+  return Array.from({ length: nCorners }, (_, k) => {
+    let bi = -1;
+    perLap.forEach((m, li) => {
+      const c = m[k]!;
+      const next = m[(k + 1) % m.length]!;
+      const clean = c.offLineM < OFF_LINE_M && next.offLineM < OFF_LINE_M;
+      if (clean && (bi < 0 || c.segmentTime < perLap[bi]![k]!.segmentTime)) bi = li;
+    });
+    return bi < 0 ? fallback : bi;
+  });
+}
+
 function completeLaps(db: DB, sessionId: number, includeSuspect = false) {
   return sessionLaps(db, sessionId).filter((l) => l.is_complete && (includeSuspect || !l.is_suspect));
 }
@@ -253,17 +271,7 @@ export function whereAmILosingTime(db: DB, sessionId: number) {
 
   // theoretical best: sum of the fastest on-line segment per corner across complete laps
   const perLap = laps.map((l) => measured(db, l, corners, refLapId).metrics);
-  const bestFrom = corners.map((_, k) => {
-    let bi = -1;
-    perLap.forEach((m, li) => {
-      const c = m[k]!;
-      // skip off-line corners, and corners whose "gain" was paid back by going off in the next one
-      const next = m[(k + 1) % m.length]!;
-      const clean = c.offLineM < OFF_LINE_M && next.offLineM < OFF_LINE_M;
-      if (clean && (bi < 0 || c.segmentTime < perLap[bi]![k]!.segmentTime)) bi = li;
-    });
-    return bi < 0 ? laps.indexOf(best) : bi;
-  });
+  const bestFrom = bestSegmentLaps(perLap, laps.indexOf(best));
   const optimal = bestFrom.reduce((s, li, k) => s + perLap[li]![k]!.segmentTime, 0);
   const bestSegments = corners.map((c, k) => {
     const li = bestFrom[k]!;
@@ -289,7 +297,7 @@ export function whereAmILosingTime(db: DB, sessionId: number) {
   };
 }
 
-const sd = (xs: number[]) => {
+export const sd = (xs: number[]) => {
   if (xs.length < 2) return 0;
   const m = xs.reduce((s, x) => s + x, 0) / xs.length;
   return Math.sqrt(xs.reduce((s, x) => s + (x - m) ** 2, 0) / (xs.length - 1));

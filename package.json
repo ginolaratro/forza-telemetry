@@ -14,6 +14,7 @@
     "replay": "tsx scripts/replay.ts",
     "inspect": "tsx scripts/inspect.ts",
     "analyze": "tsx scripts/analyze.ts",
+    "progress": "tsx scripts/progress.ts",
     "mcp": "tsx src/mcp/main.ts"
   },
   "dependencies": {

@@ -62,6 +62,24 @@ pnpm replay file.bin --udp 127.0.0.1:5344 --speed 4   # send over UDP to a runni
 pnpm inspect file.bin                                 # field ranges + lap transitions
 ```
 
+## Track your progress over time
+
+```sh
+pnpm progress                      # latest track + car: pace trend, PB history, corners improved / got slower
+pnpm progress 1620 --car 2529      # a specific track (and car)
+pnpm progress --corner T3          # one corner session by session: brake point, min/exit speed, lockups
+pnpm progress --pbs                # personal bests for every track + car
+pnpm progress --all-tunes --last 5 --json
+```
+
+Progress is tracked per track + car + tune, where the tune is the car's PI: a PI change means the car was
+upgraded or retuned, so by default only sessions on the latest PI count (`--all-tunes` mixes them). Every lap
+is measured against one corner layout, so T3 is the same corner in every session. For each session you get the
+best, median and theoretical-best lap and the lap-time spread. Pace counts as improving or slower when the
+median lap moves by more than 0.15 s (or 0.2% of the lap), and a corner as improved or regressed when its
+typical (median) segment time moves by 0.05 s. "Most left on the table" ranks corners by the gap between your
+latest typical lap and your best-ever segment there.
+
 ## Ask Claude about your driving (MCP server)
 
 ```sh
@@ -71,7 +89,7 @@ pnpm mcp                                                     # or run it directl
 
 Opens `data/forza.db` read-only, so it can run alongside `pnpm listen`. Tools: `get_status`, `list_sessions`,
 `list_laps`, `get_track_corners`, `lap_summary`, `compare_laps`, `where_am_i_losing_time`, `consistency_report`,
-`get_lap_trace`. Session arguments default to the most recent session; `compare_laps` defaults its baseline to the
+`get_lap_trace`, `progress_report`, `corner_progress`, `personal_bests`. Session arguments default to the most recent session; `compare_laps` defaults its baseline to the
 fastest clean lap on that track. Then just ask: "where am I losing time?", "why was lap 3 slow?", "what am I doing
-differently in T1 on my best lap?"
+differently in T1 on my best lap?", "am I improving at this track?", "how has my T6 changed?"
 

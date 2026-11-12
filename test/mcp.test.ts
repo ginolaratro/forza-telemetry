@@ -25,8 +25,8 @@ describe("mcp server", () => {
   it("lists the coaching tools as read-only", async () => {
     const { tools } = await client.listTools();
     expect(tools.map((t) => t.name).sort()).toEqual([
-      "compare_laps", "consistency_report", "get_lap_trace", "get_status", "get_track_corners",
-      "lap_summary", "list_laps", "list_sessions", "where_am_i_losing_time",
+      "compare_laps", "consistency_report", "corner_progress", "get_lap_trace", "get_status", "get_track_corners",
+      "lap_summary", "list_laps", "list_sessions", "personal_bests", "progress_report", "where_am_i_losing_time",
     ]);
     expect(tools.every((t) => t.annotations?.readOnlyHint)).toBe(true);
   });
