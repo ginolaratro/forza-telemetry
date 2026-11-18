@@ -6,6 +6,24 @@ so you can ask Claude *"where am I losing time?"* about your own laps.
 
 Everything runs locally — no cloud, no accounts. TypeScript on Node ≥ 20.
 
+![Live coaching dashboard mid-lap: delta to reference, next-corner brake cue, per-corner scores and lap report](docs/images/live-dashboard.png)
+
+## My results
+
+I built this to get faster, and the data says it works. On one track, over two sessions with the coach running
+(same car, same tune):
+
+| | First session | Latest session | Change |
+| --- | --- | --- | --- |
+| Best lap | 1:53.010 | **1:45.567** | **−7.44 s** |
+| Median lap | 1:53.469 | 1:47.982 | −5.49 s |
+| Lap-time spread (std dev) | 7.46 s | 3.80 s | ~2× more consistent |
+
+Nine of eleven corners got faster, and the progress view pinpoints the two that didn't (T6: braking 13 m too early).
+On other tracks the best lap dropped by 5.9 s and 2.8 s.
+
+![Progress page: personal best, pace and consistency trends, lap time by session and per-corner time change](docs/images/progress.png)
+
 ## Highlights
 
 - **Binary protocol parsing** — decodes the Forza Sled/Dash packet layouts (FM7, FM 2023, FH) from raw UDP
